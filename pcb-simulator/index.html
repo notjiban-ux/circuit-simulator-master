@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diode — 3D Hardware Simulator</title>
+  <meta name="description" content="Diode is an interactive 3D hardware simulator for Arduinos, integrated circuits, capacitors, transistors, and more. Build and simulate electronic circuits in a stunning 3D environment." />
+  <meta name="keywords" content="circuit simulator, 3D hardware, Arduino, PCB, electronics, transistor, capacitor" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ==================== LOGIN PAGE ==================== -->
+  <div id="page-login" class="page">
+    <div class="login-bg">
+      <div class="login-grid-lines"></div>
+      <div class="login-glow login-glow-1"></div>
+      <div class="login-glow login-glow-2"></div>
+    </div>
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="diode-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <rect x="4" y="4" width="40" height="40" rx="12" stroke="url(#diode-grad)" stroke-width="2.5"/>
+              <path d="M16 24L24 16L32 24L24 32Z" fill="url(#diode-grad)" opacity="0.3"/>
+              <path d="M16 24L24 16L32 24L24 32Z" stroke="url(#diode-grad)" stroke-width="2"/>
+              <circle cx="24" cy="24" r="4" fill="url(#diode-grad)"/>
+              <line x1="12" y1="24" x2="16" y2="24" stroke="#0066ff" stroke-width="2" stroke-linecap="round"/>
+              <line x1="32" y1="24" x2="36" y2="24" stroke="#ff6600" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="diode-grad" x1="0" y1="0" x2="48" y2="48">
+                  <stop offset="0%" stop-color="#0066ff"/>
+                  <stop offset="100%" stop-color="#ff6600"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <h1>Diode</h1>
+          <p class="login-subtitle">3D Hardware Simulator</p>
+        </div>
+
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="login-email">Email or Username</label>
+            <div class="input-wrapper">
+              <i data-feather="user" class="input-icon"></i>
+              <input type="text" id="login-email" placeholder="you@example.com" required autocomplete="username" />
+            </div>
+            <span class="field-error" id="email-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-wrapper">
+              <i data-feather="lock" class="input-icon"></i>
+              <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
+              <button type="button" class="toggle-password" id="toggle-pw" aria-label="Toggle password visibility">
+                <i data-feather="eye" id="pw-eye"></i>
+              </button>
+            </div>
+            <span class="field-error" id="password-error"></span>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember-me" />
+              <span class="checkmark"></span>
+              Remember me
+            </label>
+            <a href="#" class="forgot-link" id="forgot-pw">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-primary btn-login" id="btn-login">
+            <span>Sign In</span>
+            <i data-feather="arrow-right"></i>
+          </button>
+        </form>
+
+        <div class="login-footer">
+          <p>Don't have an account? <a href="#" id="signup-link">Create one</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD PAGE ==================== -->
+  <div id="page-dashboard" class="page hidden">
+    <header class="app-header" id="header-dashboard">
+      <div class="header-left">
+        <div class="app-logo" id="logo-dashboard">
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="4" width="40" height="40" rx="12" stroke="url(#dg2)" stroke-width="2.5"/>
+            <path d="M16 24L24 16L32 24L24 32Z" fill="url(#dg2)" opacity="0.3"/>
+            <path d="M16 24L24 16L32 24L24 32Z" stroke="url(#dg2)" stroke-width="2"/>
+            <circle cx="24" cy="24" r="4" fill="url(#dg2)"/>
+            <defs><linearGradient id="dg2" x1="0" y1="0" x2="48" y2="48"><stop offset="0%" stop-color="#0066ff"/><stop offset="100%" stop-color="#ff6600"/></linearGradient></defs>
+          </svg>
+          <span class="logo-text">Diode</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="dark-mode-toggle" title="Toggle dark mode">
+          <i data-feather="moon" id="theme-icon"></i>
+        </button>
+        <div class="header-divider"></div>
+        <div class="user-menu" id="user-menu">
+          <div class="user-avatar" id="user-avatar-header">
+            <span id="avatar-initial">U</span>
+          </div>
+          <span class="user-name" id="user-display-name">User</span>
+          <i data-feather="chevron-down" class="user-chevron"></i>
+          <div class="user-dropdown" id="user-dropdown">
+            <a href="#" class="dropdown-item" data-nav="profile">
+              <i data-feather="user"></i> Profile
+            </a>
+            <a href="#" class="dropdown-item" id="btn-settings">
+              <i data-feather="settings"></i> Settings
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item danger" id="btn-logout">
+              <i data-feather="log-out"></i> Sign Out
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <div class="dashboard-welcome">
+        <h2>Welcome back, <span id="welcome-name">User</span> 👋</h2>
+        <p>Pick up where you left off, or start a new simulation.</p>
+      </div>
+
+      <div class="dashboard-tiles">
+        <!-- Tile 1: Start New Simulation -->
+        <div class="tile tile-primary" id="tile-new-sim">
+          <div class="tile-icon-wrap">
+            <div class="tile-icon">
+              <i data-feather="cpu"></i>
+            </div>
+          </div>
+          <div class="tile-content">
+            <h3>Start New Simulation</h3>
+            <p>Create a fresh 3D circuit board and start building with Arduinos, ICs, capacitors, and more.</p>
+          </div>
+          <div class="tile-arrow">
+            <i data-feather="arrow-right"></i>
+          </div>
+        </div>
+
+        <!-- Tile 2: Load Saved Project -->
+        <div class="tile tile-secondary" id="tile-load">
+          <div class="tile-icon-wrap">
+            <div class="tile-icon">
+              <i data-feather="folder-plus"></i>
+            </div>
+          </div>
+          <div class="tile-content">
+            <h3>Load Saved Project</h3>
+            <p>Open a previously saved simulation from your library or import a project file.</p>
+          </div>
+          <div class="tile-arrow">
+            <i data-feather="arrow-right"></i>
+          </div>
+        </div>
+
+        <!-- Tile 3: Documentation -->
+        <div class="tile tile-tertiary" id="tile-docs">
+          <div class="tile-icon-wrap">
+            <div class="tile-icon">
+              <i data-feather="book-open"></i>
+            </div>
+          </div>
+          <div class="tile-content">
+            <h3>Documentation</h3>
+            <p>Read the Diode docs — component reference, keyboard shortcuts, API guides, and tutorials.</p>
+          </div>
+          <div class="tile-arrow">
+            <i data-feather="arrow-right"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Projects (placeholder) -->
+      <div class="dashboard-section">
+        <h3 class="section-title">Recent Projects</h3>
+        <div class="recent-grid">
+          <div class="recent-card placeholder-card">
+            <div class="recent-thumb">
+              <i data-feather="layout"></i>
+            </div>
+            <div class="recent-info">
+              <span class="recent-name">Arduino LED Blinker</span>
+              <span class="recent-date">Last edited 2 days ago</span>
+            </div>
+          </div>
+          <div class="recent-card placeholder-card">
+            <div class="recent-thumb">
+              <i data-feather="zap"></i>
+            </div>
+            <div class="recent-info">
+              <span class="recent-name">555 Timer Circuit</span>
+              <span class="recent-date">Last edited 5 days ago</span>
+            </div>
+          </div>
+          <div class="recent-card placeholder-card">
+            <div class="recent-thumb">
+              <i data-feather="radio"></i>
+            </div>
+            <div class="recent-info">
+              <span class="recent-name">RF Amplifier Board</span>
+              <span class="recent-date">Last edited 1 week ago</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== SIMULATOR PAGE ==================== -->
+  <div id="page-simulator" class="page hidden">
+    <!-- Loading spinner -->
+    <div class="sim-loading" id="sim-loading">
+      <div class="sim-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring delay-1"></div>
+        <div class="spinner-ring delay-2"></div>
+      </div>
+      <p>Initializing 3D engine…</p>
+    </div>
+
+    <!-- Top Toolbar -->
+    <header class="sim-toolbar" id="sim-toolbar">
+      <div class="toolbar-left">
+        <button class="icon-btn" id="btn-back-dashboard" title="Back to Dashboard">
+          <i data-feather="arrow-left"></i>
+        </button>
+        <div class="toolbar-divider-v"></div>
+        <div class="app-logo app-logo-sm">
+          <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="4" width="40" height="40" rx="12" stroke="url(#sg)" stroke-width="2.5"/>
+            <path d="M16 24L24 16L32 24L24 32Z" stroke="url(#sg)" stroke-width="2" fill="url(#sg)" fill-opacity="0.2"/>
+            <circle cx="24" cy="24" r="4" fill="url(#sg)"/>
+            <defs><linearGradient id="sg" x1="0" y1="0" x2="48" y2="48"><stop offset="0%" stop-color="#0066ff"/><stop offset="100%" stop-color="#ff6600"/></linearGradient></defs>
+          </svg>
+          <span class="logo-text">Diode</span>
+        </div>
+        <div class="toolbar-divider-v"></div>
+        <div class="toolbar-actions">
+          <button class="tool-btn" id="tbtn-new" title="New Board"><i data-feather="file-plus"></i></button>
+          <button class="tool-btn" id="tbtn-save" title="Save"><i data-feather="save"></i></button>
+          <button class="tool-btn" id="tbtn-undo" title="Undo"><i data-feather="corner-up-left"></i></button>
+          <button class="tool-btn" id="tbtn-redo" title="Redo"><i data-feather="corner-up-right"></i></button>
+        </div>
+      </div>
+      <div class="toolbar-center">
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="3d" id="view-3d-btn">
+            <i data-feather="box"></i> 3D View
+          </button>
+          <button class="view-btn" data-view="2d" id="view-2d-btn">
+            <i data-feather="grid"></i> 2D View
+          </button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="tool-btn btn-accent" id="btn-run-sim" title="Run Simulation">
+          <i data-feather="play"></i> <span>Simulate</span>
+        </button>
+        <div class="sim-status" id="sim-status">
+          <span class="sim-dot"></span>
+          <span class="sim-label">Idle</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Simulator Body -->
+    <div class="sim-body">
+      <!-- Left Toolbar (Vertical) -->
+      <aside class="sim-left-toolbar" id="sim-left-toolbar">
+        <div class="lt-section">
+          <span class="lt-label">Components</span>
+          <button class="lt-btn" draggable="true" data-action="add-arduino" data-component="arduino" title="Arduino">
+            <i data-feather="cpu"></i>
+          </button>
+          <button class="lt-btn" draggable="true" data-action="add-resistor" data-component="resistor" title="Resistor">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="10" x2="4" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="16" y1="10" x2="20" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <button class="lt-btn" draggable="true" data-action="add-capacitor" data-component="capacitor" title="Capacitor">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="0" y1="10" x2="8" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="4" x2="8" y2="16" stroke="currentColor" stroke-width="2"/><line x1="12" y1="4" x2="12" y2="16" stroke="currentColor" stroke-width="2"/><line x1="12" y1="10" x2="20" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <button class="lt-btn" draggable="true" data-action="add-transistor" data-component="transistor" title="Transistor">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.3"/><line x1="7" y1="5" x2="7" y2="15" stroke="currentColor" stroke-width="1.5"/><line x1="7" y1="7" x2="14" y2="4" stroke="currentColor" stroke-width="1.5"/><line x1="7" y1="13" x2="14" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <button class="lt-btn" draggable="true" data-action="add-ic" data-component="ic" title="IC Chip">
+            <i data-feather="server"></i>
+          </button>
+          <button class="lt-btn" draggable="true" data-action="add-led" data-component="led" title="LED">
+            <i data-feather="sun"></i>
+          </button>
+          <button class="lt-btn" draggable="true" data-action="add-diode" data-component="diode" title="Diode">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="7,4 7,16 14,10" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="14" y1="4" x2="14" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="10" x2="20" y2="10" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+        </div>
+        <div class="lt-divider"></div>
+        <div class="lt-section">
+          <span class="lt-label">Tools</span>
+          <button class="lt-btn active" data-action="select" title="Select / Move">
+            <i data-feather="mouse-pointer"></i>
+          </button>
+          <button class="lt-btn" data-action="rotate" title="Rotate">
+            <i data-feather="rotate-cw"></i>
+          </button>
+          <button class="lt-btn" data-action="delete" title="Delete">
+            <i data-feather="trash-2"></i>
+          </button>
+        </div>
+        <div class="lt-divider"></div>
+        <div class="lt-section">
+          <span class="lt-label">View</span>
+          <button class="lt-btn" data-action="zoom-in" title="Zoom In">
+            <i data-feather="zoom-in"></i>
+          </button>
+          <button class="lt-btn" data-action="zoom-out" title="Zoom Out">
+            <i data-feather="zoom-out"></i>
+          </button>
+          <button class="lt-btn" data-action="reset-view" title="Reset View">
+            <i data-feather="maximize"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Canvas Area -->
+      <div class="sim-canvas-wrap" id="sim-canvas-wrap">
+        <canvas id="diode-canvas"></canvas>
+        <div id="diode-3d-container"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <footer class="sim-statusbar" id="sim-statusbar">
+      <div class="sb-left">
+        <span class="sb-item" id="sb-tool">Tool: Select</span>
+        <span class="sb-sep">|</span>
+        <span class="sb-item" id="sb-component">No component selected</span>
+      </div>
+      <div class="sb-center">
+        <span class="sb-item" id="sb-count">Components: 0</span>
+      </div>
+      <div class="sb-right">
+        <span class="sb-item" id="sb-zoom">Zoom: 100%</span>
+        <span class="sb-sep">|</span>
+        <span class="sb-item" id="sb-cursor">X: 0 Y: 0</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== PROFILE PAGE ==================== -->
+  <div id="page-profile" class="page hidden">
+    <header class="app-header" id="header-profile">
+      <div class="header-left">
+        <button class="icon-btn" id="btn-back-from-profile" title="Back to Dashboard">
+          <i data-feather="arrow-left"></i>
+        </button>
+        <div class="app-logo">
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="4" width="40" height="40" rx="12" stroke="url(#pg)" stroke-width="2.5"/>
+            <path d="M16 24L24 16L32 24L24 32Z" stroke="url(#pg)" stroke-width="2" fill="url(#pg)" fill-opacity="0.2"/>
+            <circle cx="24" cy="24" r="4" fill="url(#pg)"/>
+            <defs><linearGradient id="pg" x1="0" y1="0" x2="48" y2="48"><stop offset="0%" stop-color="#0066ff"/><stop offset="100%" stop-color="#ff6600"/></linearGradient></defs>
+          </svg>
+          <span class="logo-text">Diode</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" id="dark-mode-toggle-profile" title="Toggle dark mode">
+          <i data-feather="moon" id="theme-icon-profile"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="profile-main">
+      <div class="profile-card">
+        <div class="profile-avatar-section">
+          <div class="profile-avatar-lg" id="profile-avatar-lg">
+            <span id="profile-avatar-initial">U</span>
+          </div>
+          <button class="btn-secondary btn-sm" id="btn-change-avatar">
+            <i data-feather="camera"></i> Change Photo
+          </button>
+        </div>
+        <form class="profile-form" id="profile-form">
+          <div class="form-group">
+            <label for="profile-name">Display Name</label>
+            <input type="text" id="profile-name" value="User" />
+          </div>
+          <div class="form-group">
+            <label for="profile-email">Email</label>
+            <input type="email" id="profile-email" value="user@example.com" />
+          </div>
+          <div class="form-group">
+            <label for="profile-bio">Bio</label>
+            <textarea id="profile-bio" rows="3" placeholder="Tell us about yourself…"></textarea>
+          </div>
+          <button type="submit" class="btn-primary">
+            <i data-feather="check"></i> Save Changes
+          </button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast notification container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
