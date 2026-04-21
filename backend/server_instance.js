@@ -8,7 +8,6 @@ const authRoutes = require('./routes/authRoutes');
 const circuitRoutes = require('./routes/circuitRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -17,16 +16,22 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // DB Connection
 const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/circuit-simulator';
-    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
-    console.log('MongoDB connected');
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+        console.log('MONGODB_URI not found, connecting to memory server...');
+        const { MongoMemoryServer } = require('mongodb-memory-server');
+        const mongoServer = await MongoMemoryServer.create();
+        await mongoose.connect(mongoServer.getUri());
+        console.log('MongoDB in-memory server connected');
+    } else {
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
+        console.log('MongoDB connected');
+    }
   } catch (err) {
-    console.log('Local MongoDB not found, falling back to Memory Server...');
-    const { MongoMemoryServer } = require('mongodb-memory-server');
-    const mongoServer = await MongoMemoryServer.create();
-    await mongoose.connect(mongoServer.getUri());
-    console.log('MongoDB in-memory server connected');
+    console.error('DB Connection error:', err);
   }
 };
 connectDB();
@@ -35,10 +40,8 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/circuits', circuitRoutes);
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('Circuit Simulator API is running');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;

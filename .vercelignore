@@ -1,0 +1,17 @@
+node_modules
+build
+dev_build
+pcb-simulator/node_modules
+.git
+.npmignore
+.eslintignore
+.eslintrc
+.babelrc
+.editorconfig
+LICENSE
+README.md
+mocha.opts
+test-setup.js
+deploy.sh
+gulpfile.js
+pcb-simulator/dist

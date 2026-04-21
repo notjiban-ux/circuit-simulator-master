@@ -92,7 +92,7 @@ Sidebar.propTypes = {
     editables: PropTypes.object
   }),
 
-  currentCircuit: PropTypes.object,
+  currentCircuit: PropTypes.array,
   onLoadCircuit: PropTypes.func,
 
   onDeleteComponent: PropTypes.func.isRequired,

@@ -71,37 +71,41 @@ export default class BackendPanel extends React.Component {
     }
   }
 
-  fetchCircuits = async () => {
-    try {
-      const circuits = await BackendService.getMyCircuits();
-      if (Array.isArray(circuits)) {
-        this.setState({ circuits });
-      }
-    } catch (err) {
-      console.error('Failed to fetch circuits', err);
-    }
+  fetchCircuits = () => {
+    BackendService.getMyCircuits()
+      .then(circuits => {
+        if (Array.isArray(circuits)) {
+          this.setState({ circuits });
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch circuits', err);
+      });
   };
 
-  handleAuth = async (e) => {
+  handleAuth = (e) => {
     e.preventDefault();
     this.setState({ loading: true, error: '' });
-    try {
-      let result;
-      if (this.state.isRegistering) {
-        result = await BackendService.register(this.state.username, this.state.email, this.state.password);
-      } else {
-        result = await BackendService.login(this.state.email, this.state.password);
-      }
-
-      if (result.user) {
-        this.setState({ user: result.user, loading: false });
-        this.fetchCircuits();
-      } else {
-        this.setState({ error: result.message || 'Auth failed', loading: false });
-      }
-    } catch (err) {
-      this.setState({ error: 'Connection failed', loading: false });
+    
+    let authPromise;
+    if (this.state.isRegistering) {
+      authPromise = BackendService.register(this.state.username, this.state.email, this.state.password);
+    } else {
+      authPromise = BackendService.login(this.state.email, this.state.password);
     }
+
+    authPromise
+      .then(result => {
+        if (result && result.user) {
+          this.setState({ user: result.user, loading: false });
+          this.fetchCircuits();
+        } else {
+          this.setState({ error: (result && result.message) || 'Auth failed', loading: false });
+        }
+      })
+      .catch(err => {
+        this.setState({ error: 'Connection failed', loading: false });
+      });
   };
 
   handleLogout = () => {
@@ -109,18 +113,19 @@ export default class BackendPanel extends React.Component {
     this.setState({ user: null, circuits: [] });
   };
 
-  handleSave = async () => {
+  handleSave = () => {
     const { circuitName } = this.state;
-    const { currentCircuit } = this.props; // This will be passed from state
-    try {
-      const result = await BackendService.saveCircuit(circuitName, currentCircuit);
-      if (result._id) {
-        this.fetchCircuits();
-        alert('Circuit saved!');
-      }
-    } catch (err) {
-      this.setState({ error: 'Failed to save circuit' });
-    }
+    const { currentCircuit } = this.props;
+    BackendService.saveCircuit(circuitName, currentCircuit)
+      .then(result => {
+        if (result && result._id) {
+          this.fetchCircuits();
+          alert('Circuit saved!');
+        }
+      })
+      .catch(err => {
+        this.setState({ error: 'Failed to save circuit' });
+      });
   };
 
   render() {
@@ -153,7 +158,7 @@ export default class BackendPanel extends React.Component {
               value={this.state.password}
               onChange={(e) => this.setState({ password: e.target.value })}
             />
-            <Button disabled={loading}>
+            <Button disabled={loading} onClick={this.handleAuth}>
               {loading ? '...' : (isRegistering ? 'Sign Up' : 'Login')}
             </Button>
             {error && <div style={styles.error}>{error}</div>}

@@ -12,7 +12,8 @@ import {
   deleteComponent,
   editComponent,
   changeCurrentSpeed,
-  printCircuit
+  printCircuit,
+  loadCircuit
 } from '../state/actions';
 
 class App extends React.Component {
@@ -53,6 +54,8 @@ class App extends React.Component {
           oneditComponent={handleeditComponent}
           onChangeCurrentSpeed={handleChangeCurrentSpeed}
           onPrintCircuit={handlePrintCircuit}
+          currentCircuit={this.props.currentCircuit}
+          onLoadCircuit={this.props.onLoadCircuit}
         />
         <CircuitDiagram
           getDimensions={ getCanvasSize }

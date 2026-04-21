@@ -119,7 +119,7 @@ function bindRouting() {
 }
 
 // ============================================
-// AUTH
+// AUTH & STORAGE (MOCK MODE)
 // ============================================
 function checkAuth() {
   const token = localStorage.getItem('diode_token');
@@ -132,12 +132,17 @@ function checkAuth() {
 }
 
 function login(email, password) {
-  const displayName = email.includes('@') ? email.split('@')[0] : email;
-  const user = { email, name: capitalize(displayName), avatar: displayName.charAt(0).toUpperCase() };
-  state.user = user;
-  localStorage.setItem('diode_token', 'dummy_jwt_' + Date.now());
-  localStorage.setItem('diode_user', JSON.stringify(user));
-  showToast('success', `Welcome back, ${user.name}!`);
+  // Allow any login for demo purposes
+  const name = email.includes('@') ? email.split('@')[0] : email;
+  state.user = { 
+    email: email, 
+    name: capitalize(name) || 'Student', 
+    avatar: (name.charAt(0) || 'S').toUpperCase() 
+  };
+  localStorage.setItem('diode_token', 'demo_token_' + Date.now());
+  localStorage.setItem('diode_user', JSON.stringify(state.user));
+  
+  showToast('success', `Welcome, ${state.user.name}! (Demo Mode Enabled)`);
   navigate('dashboard');
 }
 
@@ -182,8 +187,25 @@ function bindLoginEvents() {
   emailInput.addEventListener('input', () => { document.getElementById('email-error').textContent = ''; emailInput.parentElement.classList.remove('error'); });
   passwordInput.addEventListener('input', () => { document.getElementById('password-error').textContent = ''; passwordInput.parentElement.classList.remove('error'); });
 
-  document.getElementById('forgot-pw').addEventListener('click', (e) => { e.preventDefault(); showToast('info', 'Password reset — backend required.'); });
-  document.getElementById('signup-link').addEventListener('click', (e) => { e.preventDefault(); showToast('info', 'Sign-up — backend required.'); });
+  document.getElementById('forgot-pw').addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    showToast('info', 'Contact support to reset your password.'); 
+  });
+  
+  document.getElementById('signup-link').addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    const isSignup = e.target.textContent === 'Create one';
+    if (isSignup) {
+      document.querySelector('.login-logo h1').textContent = 'Join Diode';
+      document.getElementById('btn-login').querySelector('span').textContent = 'Sign Up';
+      e.target.textContent = 'Already have an account? Sign In';
+      // Add username field dynamically if needed or just use email as username
+    } else {
+      document.querySelector('.login-logo h1').textContent = 'Diode';
+      document.getElementById('btn-login').querySelector('span').textContent = 'Sign In';
+      e.target.textContent = 'Create one';
+    }
+  });
 }
 
 // ============================================
@@ -730,10 +752,28 @@ function initSimulatorPage() {
     setupDragAndDrop();
     setupMouseInteraction();
     startAnimationLoop();
+    
+    // Load sample circuit for showcase if board is empty
+    if (state.components.length === 0) {
+      loadSampleCircuit();
+    }
 
     loader.classList.add('hidden');
     updateStatusBar();
   }, 1200);
+}
+
+function loadSampleCircuit() {
+  console.log('[Diode] Loading sample circuit for showcase...');
+  // Arduino in the center
+  create3DComponent('arduino', 0, 0);
+  // Some components around it
+  create3DComponent('led', -1.2, 0.8);
+  create3DComponent('resistor', -0.8, -0.6);
+  create3DComponent('ic', 1.2, 0.5);
+  create3DComponent('capacitor', 1.0, -0.8);
+  
+  showToast('info', 'Sample Circuit Loaded for Showcase');
 }
 
 function bindSimulatorEvents() {
@@ -773,7 +813,7 @@ function bindSimulatorEvents() {
     showToast('success', 'New board created.');
   });
 
-  document.getElementById('tbtn-save').addEventListener('click', () => showToast('info', 'Save — backend required.'));
+  document.getElementById('tbtn-save').addEventListener('click', saveCircuit);
   document.getElementById('tbtn-undo').addEventListener('click', () => showToast('info', 'Undo logged.'));
   document.getElementById('tbtn-redo').addEventListener('click', () => showToast('info', 'Redo logged.'));
 
@@ -1004,5 +1044,28 @@ function clearErrors() {
   document.querySelectorAll('.input-wrapper').forEach(el => el.classList.remove('error'));
 }
 
-// ── Boot ──
-document.addEventListener('DOMContentLoaded', init);
+// ============================================
+// DEMO OPERATIONS
+// ============================================
+function saveCircuit() {
+  if (state.components.length === 0) {
+    showToast('info', 'Add some components first!');
+    return;
+  }
+  
+  const circuitData = state.components.map(c => ({
+    type: c.type, x: c.x, z: c.z, rotation: c.rotation
+  }));
+  
+  localStorage.setItem('diode_saved_circuit', JSON.stringify(circuitData));
+  showToast('success', 'Circuit saved to Local Storage (Demo Mode).');
+}
+
+function loadCircuits() {
+  const saved = localStorage.getItem('diode_saved_circuit');
+  if (saved) {
+    console.log('Saved circuit data found');
+  }
+}
+
+init();

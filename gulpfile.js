@@ -108,12 +108,7 @@ gulp.task('build', function() {
     .transform(envify({
       NODE_ENV: 'production'
     }), {global: true})
-    .transform(babel.configure({
-      optional: [
-        'optimisation.react.constantElements',
-        'optimisation.react.inlineElements'
-      ]
-    }))
+    .transform(babel)
     .bundle().on('error', handleError)
     .pipe(source('main.js'))
     .pipe(buffer())
