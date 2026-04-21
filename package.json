@@ -23,8 +23,8 @@
   "homepage": "http://github.com/circuitsim/circuit-simulator",
   "license": "EPL-1.0",
   "scripts": {
-    "dev": "concurrently \"node backend/server.js\" \"cd pcb-simulator && pnpm dev\"",
-    "build": "cd pcb-simulator && pnpm install && pnpm run build",
+    "dev": "concurrently \"node backend/server.js\" \"cd pcb-simulator && npm run dev\"",
+    "build": "cd pcb-simulator && npm install && npm run build",
     "vercel-build": "npm run build",
     "lint": "eslint src/",
     "mocha": "mocha --opts mocha.opts 'src/**/__tests__/*'",

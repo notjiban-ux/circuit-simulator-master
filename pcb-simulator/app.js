@@ -119,31 +119,91 @@ function bindRouting() {
 }
 
 // ============================================
-// AUTH & STORAGE (MOCK MODE)
+// AUTH & STORAGE (REAL BACKEND)
 // ============================================
-function checkAuth() {
+const API_BASE = '/api';
+
+async function checkAuth() {
   const token = localStorage.getItem('diode_token');
   if (token) {
-    state.user = JSON.parse(localStorage.getItem('diode_user') || '{}');
-    navigate('dashboard');
+    try {
+      // In a real app we might verify the token here, 
+      // but for now we just trust the stored user data
+      state.user = JSON.parse(localStorage.getItem('diode_user') || '{}');
+      navigate('dashboard');
+    } catch (e) {
+      logout();
+    }
   } else {
     navigate('login');
   }
 }
 
-function login(email, password) {
-  // Allow any login for demo purposes
-  const name = email.includes('@') ? email.split('@')[0] : email;
-  state.user = { 
-    email: email, 
-    name: capitalize(name) || 'Student', 
-    avatar: (name.charAt(0) || 'S').toUpperCase() 
-  };
-  localStorage.setItem('diode_token', 'demo_token_' + Date.now());
-  localStorage.setItem('diode_user', JSON.stringify(state.user));
-  
-  showToast('success', `Welcome, ${state.user.name}! (Demo Mode Enabled)`);
-  navigate('dashboard');
+async function login(email, password) {
+  try {
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Signing in...';
+
+    const response = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+
+    localStorage.setItem('diode_token', data.token);
+    localStorage.setItem('diode_user', JSON.stringify(data.user));
+    state.user = data.user;
+    
+    showToast('success', `Welcome back, ${state.user.username}!`);
+    navigate('dashboard');
+  } catch (err) {
+    showToast('error', err.message);
+    document.getElementById('password-error').textContent = err.message;
+  } finally {
+    const btn = document.getElementById('btn-login');
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Sign In';
+  }
+}
+
+async function register(username, email, password) {
+  try {
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Creating account...';
+
+    const response = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Registration failed');
+    }
+
+    localStorage.setItem('diode_token', data.token);
+    localStorage.setItem('diode_user', JSON.stringify(data.user));
+    state.user = data.user;
+    
+    showToast('success', `Account created! Welcome, ${state.user.username}`);
+    navigate('dashboard');
+  } catch (err) {
+    showToast('error', err.message);
+  } finally {
+    const btn = document.getElementById('btn-login');
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Sign Up';
+  }
 }
 
 function logout() {
@@ -1047,24 +1107,62 @@ function clearErrors() {
 // ============================================
 // DEMO OPERATIONS
 // ============================================
-function saveCircuit() {
+// ============================================
+// REAL BACKEND OPERATIONS
+// ============================================
+async function saveCircuit() {
   if (state.components.length === 0) {
     showToast('info', 'Add some components first!');
     return;
   }
   
-  const circuitData = state.components.map(c => ({
-    type: c.type, x: c.x, z: c.z, rotation: c.rotation
-  }));
-  
-  localStorage.setItem('diode_saved_circuit', JSON.stringify(circuitData));
-  showToast('success', 'Circuit saved to Local Storage (Demo Mode).');
+  const token = localStorage.getItem('diode_token');
+  if (!token) {
+    showToast('error', 'Please log in to save your work.');
+    return;
+  }
+
+  try {
+    const circuitData = state.components.map(c => ({
+      type: c.type, x: c.x, z: c.z, rotation: c.rotation
+    }));
+    
+    const response = await fetch(`${API_BASE}/circuits/save`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        name: `Circuit ${new Date().toLocaleString()}`, 
+        data: circuitData 
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Save failed');
+
+    showToast('success', 'Circuit saved to your cloud library!');
+  } catch (err) {
+    showToast('error', `Failed to save: ${err.message}`);
+  }
 }
 
-function loadCircuits() {
-  const saved = localStorage.getItem('diode_saved_circuit');
-  if (saved) {
-    console.log('Saved circuit data found');
+async function loadCircuits() {
+  const token = localStorage.getItem('diode_token');
+  if (!token) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/circuits/my-circuits`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    if (response.ok) {
+      console.log('[Diode] Loaded user circuits:', data);
+      // Here we could populate the dashboard with recent projects
+    }
+  } catch (err) {
+    console.error('Failed to load circuits:', err);
   }
 }
 
